@@ -9,5 +9,6 @@ int main()
 	dup2(fd2,fd3);
 	fd4=fcntl(fd1, F_DUPFD);
 	printf("fd1 = %d \nfd2 = %d \nfd4 = %d\n", fd1, fd2, fd4);
+	getchar();
         return 0;
 }	
