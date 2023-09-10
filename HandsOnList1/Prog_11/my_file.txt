@@ -1,4 +1,4 @@
-Hello 
-Hi 
-How are you
-I am fine
+Written by fd1 
+Written by fd2 using dup 
+Written by fd_dup using dup2 
+Written by fd3 using fcntl 
