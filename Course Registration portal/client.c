@@ -26,6 +26,7 @@ void admin_functions(int, int);
 void faculty_funtions(int, int);
 void student_functions(int, int);
 void add_student(int, int);
+void add_faculty(int, int);
 
 #define DEFAULT_PASS "abc123"
 #define STUDENT_DB "/home/pranjal-gawande/Software System/Course Registration portal/database/student_db"
@@ -278,15 +279,13 @@ void admin_functions(int sockfd, int option)
     switch (option)
     {
     case 1:
-        // printf("add func called\n");
         add_student(sockfd, option);
-        // printf("add func returned\n");
         break;
     case 2:
         // view_student_details(sockfd, option);
         break;
     case 3:
-        // add_faculty(sockfd, option);
+        add_faculty(sockfd, option);
         break;
     case 4:
         // view_faculty_details(sockfd, option);
@@ -314,6 +313,7 @@ void admin_functions(int sockfd, int option)
     return;
 }
 
+// Adding new student
 void add_student(int sockfd, int option)
 {
     // printf("add func entered\n");
@@ -326,16 +326,17 @@ void add_student(int sockfd, int option)
 
     // Taking inputs for new student
     printf("Enter name: ");
-    scanf("%s", new_student.name);
+    fgets(new_student.name, sizeof(new_student.name), stdin);
 
     printf("Enter age: ");
     scanf("%d", &new_student.age);
+    getchar();
 
     printf("Enter address: ");
-    scanf("%s", new_student.address);
+    fgets(new_student.address, sizeof(new_student.address), stdin);
 
     printf("Enter email: ");
-    scanf("%s", new_student.email);
+    fgets(new_student.email, sizeof(new_student.email), stdin);
 
     strcpy(new_student.login_id, "");
 
@@ -354,7 +355,7 @@ void add_student(int sockfd, int option)
     {
         printf("\nStudent record added Successfully\n\n");
         printf("Student Id generated is: %d\n\n", id);
-        printf("NOTE: Login Id is MT{Student Id}\n\n");
+        printf("NOTE: Login Id is MT{Student_Id}\n\n");
     }
     else
     {
@@ -364,3 +365,61 @@ void add_student(int sockfd, int option)
     show_menu(sockfd);
     return;
 }
+
+// view student details
+
+
+void add_faculty(int sockfd, int option)
+{
+    // printf("add func entered\n");
+    struct faculty new_faculty;
+    bool result;
+
+    // printf("sended option\n");
+    send(sockfd, &option, sizeof(option), 0);
+    getchar();
+
+    // Taking inputs for new student
+    printf("Enter name: ");
+    fgets(new_faculty.name, sizeof(new_faculty.name), stdin);
+    
+    printf("Enter department: ");
+    fgets(new_faculty.department, sizeof(new_faculty.department), stdin);
+
+    printf("Enter designation: ");
+    fgets(new_faculty.designation, sizeof(new_faculty.designation), stdin);
+
+    printf("Enter address: ");
+    fgets(new_faculty.address, sizeof(new_faculty.address), stdin);
+
+    printf("Enter email: ");
+    fgets(new_faculty.email, sizeof(new_faculty.email), stdin);
+
+    strcpy(new_faculty.login_id, "");
+
+    strcpy(new_faculty.password, DEFAULT_PASS);
+
+    // printf("sended new_student record\n");
+    send(sockfd, &new_faculty, sizeof(struct faculty), 0);
+
+    int id;
+    recv(sockfd, &id, sizeof(id), 0);
+    // printf("received id\n");
+    recv(sockfd, &result, sizeof(result), 0);
+    // printf("received new_student record\n");
+
+    if (result == true)
+    {
+        printf("\nFaculty record added Successfully\n\n");
+        printf("Faculty Id generated is: %d\n\n", id);
+        printf("NOTE: Login Id is FT{Faculty_Id}\n\n");
+    }
+    else
+    {
+        printf("Error during adding faculty record\n");
+    }
+    // printf("add student completed\n");
+    show_menu(sockfd);
+    return;
+}
+

@@ -17,10 +17,12 @@
 
 #define DEFAULT_PASS "abc123"
 #define STUDENT_DB "/home/pranjal-gawande/Software System/Course Registration portal/database/student_db"
+#define FACULTY_DB "/home/pranjal-gawande/Software System/Course Registration portal/database/faculty_db"
 
 
 int servercall (int);
 bool addstudent(int, struct student);
+bool addfaculty(int, struct faculty);
 
 int main() {
 	struct sockaddr_in server, client;
@@ -128,10 +130,10 @@ int servercall(int clifd) {
 			case 1:
 				switch (option) {
 					case 1:					// add student
-						struct student record;
-						recv(clifd, &record, sizeof(struct student), 0);
+						struct student record1;
+						recv(clifd, &record1, sizeof(struct student), 0);
 						//printf("Received record from client\n");
-						result = addstudent(clifd, record);
+						result = addstudent(clifd, record1);
 						//printf("resutl returned\n");
 						send (clifd, &result, sizeof(result), 0);
 						//printf("Sended record to client\n");
@@ -141,6 +143,10 @@ int servercall(int clifd) {
 					case 2:
 						break;
 					case 3:
+						struct faculty record3;
+						recv(clifd, &record3, sizeof(struct faculty), 0);
+						result = addfaculty(clifd, record3);
+						send (clifd, &result, sizeof(result), 0);
 						break;
 					case 4:
 						break;
@@ -185,7 +191,7 @@ bool addstudent(int clifd, struct student record) {
 
         // using read lock for fetching id from prev student
         struct flock lock;
-        lock.l_type = F_RDLCK;
+        lock.l_type = F_WRLCK;
         lock.l_whence = SEEK_END;
         lock.l_start = (-1) * sizeof(struct student);
         lock.l_len = sizeof(struct student);
@@ -221,7 +227,7 @@ bool addstudent(int clifd, struct student record) {
 	record.status = 1;
 
 	// generate login_id -> MT{id}
-    strcpy(record.login_id, "MT");
+    // strcpy(record.login_id, "MT");
 	sprintf(record.login_id, "MT%d", record.id);
 
 	int id = record.id;
@@ -232,6 +238,83 @@ bool addstudent(int clifd, struct student record) {
 	ssize_t fd_write = write(fd, &record, sizeof(struct student));
 	if (fd_write == -1) {
 		perror("Error in writing student record");
+		result = false;
+		exit(EXIT_FAILURE);
+	}
+	else {
+		result = true;
+	}
+	return result;
+}
+
+
+bool addfaculty(int clifd, struct faculty record) {
+	//printf("at add student\n");
+	bool result;
+	struct faculty prev_record;
+
+	int fd = open(FACULTY_DB, O_RDWR, 0777);
+    if (fd == -1 && errno == ENOENT) {
+        fd = open(FACULTY_DB, O_RDWR | O_CREAT | O_APPEND, 0777);
+		if (fd == -1) {
+			perror("Error in opening faculty_db");
+			exit(EXIT_FAILURE);
+		}
+		record.id = 1; 				// if student_db was not created
+    }
+    else if (fd == -1) {
+        perror("Error in opening faculty_db file");
+        exit(EXIT_FAILURE);
+    }
+    else {
+
+        // using read lock for fetching id from prev student
+        struct flock lock;
+        lock.l_type = F_WRLCK;
+        lock.l_whence = SEEK_END;
+        lock.l_start = (-1) * sizeof(struct faculty);
+        lock.l_len = sizeof(struct faculty);
+        lock.l_pid = getpid();
+
+        int status = fcntl(fd, F_SETLKW, &lock);
+        if (status == -1) {
+            perror("Error while locking faculty record");
+            exit(EXIT_FAILURE);
+        }
+
+		lseek (fd, (-1)*sizeof(struct faculty), SEEK_END);
+
+        ssize_t fd_read = read(fd, &prev_record, sizeof(struct faculty));
+        if (fd_read == -1) {
+            perror("Error in reading prev_student record");
+            exit(EXIT_FAILURE);
+        }
+
+        lock.l_type = F_UNLCK;
+        status = fcntl(fd, F_SETLK, &lock);
+        if (status == -1) {
+            perror("Error while unlocking student record");
+            exit(EXIT_FAILURE);
+        }
+		// printf("prev_id: %d\n", prev_record.id);
+		// printf("new_id: %d\n", record.id);
+        record.id = prev_record.id + 1;
+		// printf("generated_id: %d\n", record.id);
+
+    }
+
+
+	// generate login_id -> FT{id}
+	sprintf(record.login_id, "FT%d", record.id);
+
+	int id = record.id;
+	send(clifd, &id, sizeof(id), 0);
+
+	printf("Generated_id: %d\n", record.id);
+
+	ssize_t fd_write = write(fd, &record, sizeof(struct faculty));
+	if (fd_write == -1) {
+		perror("Error in writing faculty record");
 		result = false;
 		exit(EXIT_FAILURE);
 	}
