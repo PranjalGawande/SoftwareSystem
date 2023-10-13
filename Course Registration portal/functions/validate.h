@@ -28,7 +28,7 @@ bool validateAdmin(struct admin curr_user) {
     lock.l_type = F_RDLCK;
 	lock.l_whence=SEEK_SET;
 	lock.l_start=0;   	    
-	lock.l_len=0;       
+	lock.l_len=sizeof(struct admin);       
 	lock.l_pid=getpid();
 
     status = fcntl(fd, F_SETLKW, &lock);

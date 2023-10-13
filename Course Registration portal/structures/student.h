@@ -12,7 +12,7 @@ struct student
     // Login Credentials
     char login_id[15]; // Format : MT{id}
     char password[15];
-    int status;
+    char status[15];
     
 };
 
