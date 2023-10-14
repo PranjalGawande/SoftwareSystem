@@ -20,12 +20,15 @@
 // int clientcall(int);
 int welcome_menu(int);
 int show_menu(int);
+
 void admin_login(int);
 void faculty_login(int);
 void student_login(int);
+
 void admin_functions(int, int);
 void faculty_functions(int, int);
 void student_functions(int, int);
+
 void add_student(int, int);
 void view_student_details(int, int);
 void add_faculty(int, int);
@@ -34,9 +37,11 @@ void activate_student(int, int);
 void block_student(int, int);
 void modify_student(int, int);
 void modify_faculty(int, int);
+
 void view_courses (int, int);
 void add_course(int, int);
 void remove_course(int, int);
+void update_course(int, int);
 
 #define DEFAULT_PASS "abc123"
 #define STUDENT_DB "/home/pranjal-gawande/Software System/Course Registration portal/database/student_db"
@@ -91,13 +96,9 @@ int welcome_menu(int sockfd)
         break;
     case 2:
         faculty_login(sockfd);
-        // faculty_menu();
-        // faculty_funtions(sockfd);
         break;
     case 3:
         student_login(sockfd);
-        // student_menu();
-        // student_functions(sockfd);
         break;
     default:
         printf("\nInvalid choice \n");
@@ -308,7 +309,7 @@ void faculty_functions(int sockfd, int option) {
         remove_course(sockfd, option);
         break;
     case 4:
-        // view_faculty_details(sockfd, option);
+        update_course(sockfd, option);
         break;
     case 5:
         // activate_student(sockfd, option);
@@ -554,19 +555,19 @@ void activate_student(int sockfd, int option)
 
     if (msg == 0)
     {
-        printf("student is already ACTIVE\n");
+        printf("\nStudent is already ACTIVE\n");
     }
     else if (msg == 1 && result == true)
     {
-        printf("Succesfully activated the student\n");
+        printf("\nSuccesfully activated the student\n");
     }
     else if (msg = 2)
     {
-        printf("Student record not found!!\n");
+        printf("\nStudent record not found!!\n");
     }
     else if (result == false)
     {
-        printf("Error in activating the student\n");
+        printf("\nError in activating the student\n");
     }
 
     show_menu(sockfd);
@@ -715,7 +716,7 @@ void view_courses (int sockfd, int option) {
     int count;
     recv (sockfd, &count, sizeof(count), 0);
 
-    printf ("You are currently offering %d courses\n", count);
+    printf ("\nYou are currently offering %d courses\n\n", count);
     for (int i = 0; i < count; i++) {
         recv (sockfd, &record, sizeof(struct course), 0);
         printf ("Course Id: %d\n", record.id);
@@ -734,7 +735,7 @@ void view_courses (int sockfd, int option) {
         printf ("Succefully fetched all courses\n");
     }
     else {
-        printf ("Error in fetching courses\n");
+        printf ("NO Course Found3\n");
     }
 
     show_menu(sockfd);
@@ -804,12 +805,29 @@ void remove_course(int sockfd, int option) {
 
     struct course record;
     bool result;
+    int msg;
 
     printf ("Enter the Course Id of the Course you want to Remove: ");
     scanf ("%d", &record.id);
 
     send (sockfd, &record, sizeof(struct course), 0);
 
-    
+    recv (sockfd, &msg, sizeof(msg), 0);
+
+    recv (sockfd, &result, sizeof(result), 0);
+
+    if (msg == 0 && result == true) {
+        printf ("\nSuccessfully Removed the Course\n");
+    }
+    else if (msg == 1 || msg == 2) {
+        printf ("\nCourse not Found\n");
+    }
+    else if (result == false) {
+        printf ("\nError while Removing the Course\n");
+    }
+
+    show_menu(sockfd);
+    return;
 
 }
+
