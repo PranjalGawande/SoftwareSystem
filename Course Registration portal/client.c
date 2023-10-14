@@ -13,6 +13,7 @@
 #include "./structures/admin.h"
 #include "./structures/faculty.h"
 #include "./structures/student.h"
+#include "./structures/course.h"
 // #include "./functions/showmenu.h"
 // #include "./functions/admin_functions.h"
 
@@ -23,7 +24,7 @@ void admin_login(int);
 void faculty_login(int);
 void student_login(int);
 void admin_functions(int, int);
-void faculty_funtions(int, int);
+void faculty_functions(int, int);
 void student_functions(int, int);
 void add_student(int, int);
 void view_student_details(int, int);
@@ -33,6 +34,8 @@ void activate_student(int, int);
 void block_student(int, int);
 void modify_student(int, int);
 void modify_faculty(int, int);
+void view_courses (int, int);
+void add_course(int, int);
 
 #define DEFAULT_PASS "abc123"
 #define STUDENT_DB "/home/pranjal-gawande/Software System/Course Registration portal/database/student_db"
@@ -137,6 +140,9 @@ int show_menu(int sockfd)
         printf("9. Logout and Exit\n\n");
 
         printf("Enter your choice: \n");
+        scanf("%d", &option);
+
+        faculty_functions(sockfd, option);
         break;
 
     case 3:
@@ -288,11 +294,55 @@ void admin_functions(int sockfd, int option)
     return;
 }
 
+void faculty_functions(int sockfd, int option) {
+    switch (option)
+    {
+    case 1:
+        view_courses(sockfd, option);
+        break;
+    case 2:
+        add_course(sockfd, option);
+        // view_student_details(sockfd, option);
+        break;
+    case 3:
+        // add_faculty(sockfd, option);
+        break;
+    case 4:
+        // view_faculty_details(sockfd, option);
+        break;
+    case 5:
+        // activate_student(sockfd, option);
+        break;
+    case 6:
+        // block_student(sockfd, option);
+        break;
+    case 7:
+        // modify_student(sockfd, option);
+        break;
+    case 8:
+        // modify_faculty(sockfd, option);
+        break;
+    case 9:
+        break;
+    default:
+        printf("Invalid choice");
+        show_menu(sockfd);
+        break;
+    }
+    return;
+}
+
+
+
+// *************************************
+// ********* ADMIN FUNCTOINS ***********
+// *************************************
+
 // 1. Adding new student
 void add_student(int sockfd, int option)
 {
     // printf("add func entered\n");
-    struct student new_student, login;
+    struct student new_student;
     bool result;
 
     // printf("sended option\n");
@@ -643,4 +693,83 @@ void modify_faculty(int sockfd, int option)
 
     show_menu(sockfd);
     return;
+}
+
+
+// ***************************************
+// ********* FACULTY FUNCTOINS ***********
+// ***************************************
+
+
+void view_courses (int sockfd, int option) {
+    send (sockfd, &option, sizeof(option), 0);
+
+    struct course record;
+    bool resutl;
+    
+    printf ("Enter your Faculty Id: ");
+    scanf("%d", &record.faculty_id);
+
+    send (sockfd, &record, sizeof(struct course), 0);
+
+    
+
+
+}
+
+void add_course(int sockfd, int option) {
+    send (sockfd, &option, sizeof(option), 0);
+
+    struct course record;
+    bool result;
+
+    getchar();
+    printf ("Enter Course Name: ");
+    scanf("%[^\n]", record.name);
+
+    getchar();
+    printf ("Enter Your Faculty Id: ");
+    scanf("%d", &record.faculty_id);
+
+    getchar();
+    printf ("Enter Department: ");
+    scanf("%[^\n]", record.department);
+
+    getchar();
+    printf ("Enter Number of seats: ");
+    scanf("%d", &record.no_of_seats);
+
+    getchar();
+    printf ("Enter Course Credits: ");
+    scanf("%d", &record.credits);
+
+    getchar();
+    printf ("Enter Course Code (First 2 letters): ");
+    scanf("%[^\n]", record.course_code);
+
+    // strcpy(record.courseid, "");
+
+    send (sockfd, &record, sizeof(struct course), 0);
+
+    // int id;
+    // recv (sockfd, &id, sizeof(id), 0);
+
+    char code[6];
+    strcpy(code, record.course_code);
+    recv (sockfd, &code, sizeof(code), 0);
+
+    recv (sockfd, &result, sizeof(result), 0);
+
+    if (result == true) {
+        printf ("\nNew Course Added Successfully\n\n");
+        printf ("Course Code generated: %s\n\n", code);
+    }
+    else {
+        printf ("Error during adding course");
+        return;
+    }
+
+    show_menu(sockfd);
+    return;
+
 }
