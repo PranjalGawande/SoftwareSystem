@@ -36,6 +36,7 @@ void modify_student(int, int);
 void modify_faculty(int, int);
 void view_courses (int, int);
 void add_course(int, int);
+void remove_course(int, int);
 
 #define DEFAULT_PASS "abc123"
 #define STUDENT_DB "/home/pranjal-gawande/Software System/Course Registration portal/database/student_db"
@@ -302,10 +303,9 @@ void faculty_functions(int sockfd, int option) {
         break;
     case 2:
         add_course(sockfd, option);
-        // view_student_details(sockfd, option);
         break;
     case 3:
-        // add_faculty(sockfd, option);
+        remove_course(sockfd, option);
         break;
     case 4:
         // view_faculty_details(sockfd, option);
@@ -705,15 +705,40 @@ void view_courses (int sockfd, int option) {
     send (sockfd, &option, sizeof(option), 0);
 
     struct course record;
-    bool resutl;
+    bool result;
     
     printf ("Enter your Faculty Id: ");
     scanf("%d", &record.faculty_id);
 
     send (sockfd, &record, sizeof(struct course), 0);
 
-    
+    int count;
+    recv (sockfd, &count, sizeof(count), 0);
 
+    printf ("You are currently offering %d courses\n", count);
+    for (int i = 0; i < count; i++) {
+        recv (sockfd, &record, sizeof(struct course), 0);
+        printf ("Course Id: %d\n", record.id);
+        printf ("Course Code: %s\n", record.course_code);
+        printf ("Course Name: %s\n", record.name);
+        printf ("Course Department: %s\n", record.department);
+        printf ("Total Number of Seats: %d\n", record.no_of_seats);
+        printf ("Number of Available Seats: %d\n", record.no_of_available_seats);
+        printf ("Total Credits: %d\n", record.credits);
+        printf ("Course Status: %s\n\n", record.status);
+
+    }
+
+    recv (sockfd, &result, sizeof(struct course), 0);
+    if (result == true) {
+        printf ("Succefully fetched all courses\n");
+    }
+    else {
+        printf ("Error in fetching courses\n");
+    }
+
+    show_menu(sockfd);
+    return;
 
 }
 
@@ -765,11 +790,26 @@ void add_course(int sockfd, int option) {
         printf ("Course Code generated: %s\n\n", code);
     }
     else {
-        printf ("Error during adding course");
+        printf ("No record\n");
         return;
     }
 
     show_menu(sockfd);
     return;
+
+}
+
+void remove_course(int sockfd, int option) {
+    send (sockfd, &option, sizeof(option), 0);
+
+    struct course record;
+    bool result;
+
+    printf ("Enter the Course Id of the Course you want to Remove: ");
+    scanf ("%d", &record.id);
+
+    send (sockfd, &record, sizeof(struct course), 0);
+
+    
 
 }

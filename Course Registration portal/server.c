@@ -31,6 +31,8 @@ bool blockStudent(int, struct student);
 bool modifyStudent(int, struct student);
 bool modifyFaculty(int, struct faculty);
 bool addCourse(int, struct course);
+bool viewCourses(int, struct course);
+bool removeCourse(int, struct course);
 
 int main()
 {
@@ -210,14 +212,21 @@ int servercall(int clifd)
 			{
 			case 1:
 				struct course record9;
-				
+				recv(clifd, &record9, sizeof(struct course), 0);
+				result = viewCourses(clifd, record9);
+				send(clifd, &result, sizeof(result), 0);
 				break;
 			case 2:
 				struct course record10;
-				recv(clifd, &record9, sizeof(struct course), 0);
-				result = addCourse(clifd, record9);
+				recv(clifd, &record10, sizeof(struct course), 0);
+				result = addCourse(clifd, record10);
 				send(clifd, &result, sizeof(result), 0);
 				break;
+			case 3:
+				struct course record11;
+				recv(clifd, &record11, sizeof(struct course), 0);
+				result = removeCourse(clifd, record11);
+				send(clifd, &result, sizeof(result), 0);
 			}
 		}
 		if (option == 9)
@@ -905,4 +914,98 @@ bool addCourse(int clifd, struct course record)
 	}
 	close(fd);
 	return result;
+}
+
+
+bool viewCourses(int clifd, struct course record)
+{
+	bool result = false;
+	struct course curr_record;
+
+	int fd = open(COURSE_DB, O_RDONLY, 0777);
+	if (fd == -1)
+	{
+		perror("Error in opening course_db");
+		exit(EXIT_FAILURE);
+	}
+
+	struct flock lock;
+	lock.l_type = F_RDLCK;
+	lock.l_whence = SEEK_SET;
+	lock.l_start = 0;
+	lock.l_len = 0;
+	lock.l_pid = getpid();
+
+	int status = fcntl(fd, F_SETLKW, &lock);
+	if (status == -1)
+	{
+		perror("Error while locking course record");
+		exit(EXIT_FAILURE);
+	}
+
+	// reading record one by one
+	int count = 0;
+	ssize_t byteread;
+
+	// to count no. of courses offered by faculty
+	while ((byteread = read (fd, &curr_record, sizeof(struct course))) > 0) {
+		if (curr_record.faculty_id == record.faculty_id) {
+			count++;
+		}
+	}
+
+	lseek (fd, 0, SEEK_SET);
+
+	send (clifd, &count, sizeof(count), 0);
+
+	// reading records and sending to client
+	while ((byteread = read (fd, &curr_record, sizeof(struct course))) > 0) {
+		if (curr_record.faculty_id == record.faculty_id) {
+			send (clifd, &curr_record, sizeof(struct course), 0);
+		}
+	}
+
+	// lseek(fd, (i) * sizeof(struct student), SEEK_SET);
+	// ssize_t fd_read = read(fd, &curr_record, sizeof(struct student));
+	// if (fd_read == -1)
+	// {
+	// 	perror("Error while reading current record");
+	// 	exit(EXIT_FAILURE);
+	// }
+
+	// if (curr_record.id == record.id)
+	// {
+	// 	send(clifd, &curr_record, sizeof(struct student), 0);
+	// 	result = true;
+	// }
+	// else
+	// {
+	// 	send(clifd, &curr_record, sizeof(struct student), 0);
+	// 	result = false;
+	// }
+	if (count == 0) {
+		result = false;
+	}
+	else {
+		result = true;
+	}
+	// result = true;
+	lock.l_type = F_UNLCK;
+	status = fcntl(fd, F_SETLK, &lock);
+	if (status == -1)
+	{
+		perror("Error in unlocking the file");
+		exit(EXIT_FAILURE);
+	}
+
+	close(fd);
+	
+	return result;
+}
+
+
+bool removeCourse(int clifd, struct course record) {
+	int id = record.id - 1;
+	struct course curr_record;
+
 }

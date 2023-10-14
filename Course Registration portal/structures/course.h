@@ -8,8 +8,8 @@ struct course
     int faculty_id;
     char department [30];
     int no_of_seats;
-    int credits;
     int no_of_available_seats;
+    int credits;
     char course_code[6];
     char status[8];    
 };
