@@ -12,8 +12,13 @@
 
 #include "../structures/admin.h"
 #include "../structures/faculty.h"
+// #include "../server.c"
+
+int uid;
+bool result;
 
 bool validateAdmin(struct admin curr_user) {
+    // bool result;
     int fd = open("/home/pranjal-gawande/Software System/Course Registration portal/database/admin_db", O_RDONLY);
     if (fd == -1) {
         perror ("Error in opening admin_db file");
@@ -28,7 +33,7 @@ bool validateAdmin(struct admin curr_user) {
     lock.l_type = F_RDLCK;
 	lock.l_whence=SEEK_SET;
 	lock.l_start=0;   	    
-	lock.l_len=sizeof(struct admin);       
+	lock.l_len=0;       
 	lock.l_pid=getpid();
 
     status = fcntl(fd, F_SETLKW, &lock);
@@ -41,7 +46,12 @@ bool validateAdmin(struct admin curr_user) {
     // reading record
     while(read(fd, &temp, sizeof(temp)) > 0) {
         if (strcmp(temp.login_id, curr_user.login_id) == 0 && strcmp(temp.password, curr_user.password) == 0) {
-            return true;
+            uid = temp.id;
+            result = true;
+            break;
+        }
+        else {
+            result = false;
         }
     }
 
@@ -55,7 +65,7 @@ bool validateAdmin(struct admin curr_user) {
     }
 
     close(fd);
-    return false;
+    return result;
 
 }
 
@@ -87,7 +97,13 @@ bool validateFaculty(struct faculty curr_user) {
     // reading record
     while(read(fd, &temp, sizeof(temp)) > 0) {
         if (strcmp(temp.login_id, curr_user.login_id) == 0 && strcmp(temp.password, curr_user.password) == 0) {
-            return true;
+            uid = temp.id;
+            result = true;
+            break;
+        }
+        else {
+            result = false;
+            
         }
     }
 
@@ -101,7 +117,7 @@ bool validateFaculty(struct faculty curr_user) {
     }
 
     close(fd);
-    return false;
+    return result;
 
 }
 
@@ -109,7 +125,7 @@ bool validateFaculty(struct faculty curr_user) {
 bool validateStudent(struct student curr_user) {
     int fd = open("/home/pranjal-gawande/Software System/Course Registration portal/database/student_db", O_RDONLY);
     if (fd == -1) {
-        perror ("Error in opening faculty_db file");
+        perror ("Error in opening student_db file");
         exit(EXIT_FAILURE);
     }
 
@@ -134,7 +150,13 @@ bool validateStudent(struct student curr_user) {
     // reading record
     while(read(fd, &temp, sizeof(temp)) > 0) {
         if (strcmp(temp.login_id, curr_user.login_id) == 0 && strcmp(temp.password, curr_user.password) == 0) {
-            return true;
+            uid = temp.id;
+            result = true;
+            break;
+        }
+        else {
+            result = false;
+
         }
     }
 
@@ -148,7 +170,7 @@ bool validateStudent(struct student curr_user) {
     }
 
     close(fd);
-    return false;
+    return result;
 
 }
 

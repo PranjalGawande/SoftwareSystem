@@ -22,6 +22,7 @@
 #define COURSE_DB "/home/pranjal-gawande/Software System/Course Registration portal/database/course_db"
 
 int servercall(int);
+
 bool addstudent(int, struct student);
 bool viewStudentDetails(int, struct student);
 bool addfaculty(int, struct faculty);
@@ -30,9 +31,16 @@ bool activateStudent(int, struct student);
 bool blockStudent(int, struct student);
 bool modifyStudent(int, struct student);
 bool modifyFaculty(int, struct faculty);
+
 bool addCourse(int, struct course);
 bool viewCourses(int, struct course);
 bool removeCourse(int, struct course);
+bool updateCourse(int, struct course);
+bool facultyChangePass(int, struct faculty);
+
+bool studentChangePass(int, struct student);
+
+// int id;
 
 int main()
 {
@@ -110,25 +118,19 @@ int servercall(int clifd)
 		{
 		case 1:
 			struct admin curr_userA;
-			// char curr_loginId[25];
 			recv(clifd, &curr_userA, sizeof(struct admin), 0);
-			// strcpy(curr_loginId,curr_user.login_id);
 			result = validateAdmin(curr_userA);
 			send(clifd, &result, sizeof(result), 0);
 			break;
 		case 2:
 			struct faculty curr_userF;
-			// //char curr_loginId[25];
 			recv(clifd, &curr_userF, sizeof(struct faculty), 0);
-			// //strcpy(curr_loginId,curr_user.login_id);
 			result = validateFaculty(curr_userF);
 			send(clifd, &result, sizeof(result), 0);
 			break;
 		case 3:
 			struct student curr_userS;
-			// //char curr_loginId[25];
 			recv(clifd, &curr_userS, sizeof(struct student), 0);
-			// //strcpy(curr_loginId,curr_user.login_id);
 			result = validateStudent(curr_userS);
 			send(clifd, &result, sizeof(result), 0);
 			break;
@@ -202,6 +204,8 @@ int servercall(int clifd)
 				result = modifyFaculty(clifd, record8);
 				send(clifd, &result, sizeof(result), 0);
 				break;
+			case 9:
+				break;
 			default:
 				break;
 			}
@@ -227,7 +231,42 @@ int servercall(int clifd)
 				recv(clifd, &record11, sizeof(struct course), 0);
 				result = removeCourse(clifd, record11);
 				send(clifd, &result, sizeof(result), 0);
+				break;
+			case 4:
+				struct course record12;
+				recv(clifd, &record12, sizeof(struct course), 0);
+				result = updateCourse(clifd, record12);
+				send(clifd, &result, sizeof(result), 0);
+				break;
+			case 5:
+				struct faculty record13;
+				recv(clifd, &record13, sizeof(struct faculty), 0);
+				result = facultyChangePass(clifd, record13);
+				send(clifd, &result, sizeof(result), 0);
+			case 6:
+				break;
+			default:
+				break;
 			}
+
+		case 3:
+			switch(option) {
+				case 1:
+					break;
+				case 2:
+					break;
+				case 3:
+					break;
+				case 4:
+					break;
+				case 5:
+					struct student record18;
+					recv(clifd, &record18, sizeof(struct student), 0);
+					result = studentChangePass(clifd, record18);
+					send(clifd, &result, sizeof(result), 0);
+					break;
+			}
+		
 		}
 		if (option == 9)
 		{
@@ -920,16 +959,16 @@ bool addCourse(int clifd, struct course record)
 	// generate login_id -> MT{id}
 	// strcpy(record.login_id, "MT");
 	char new_code[6];
-	int res = snprintf(new_code, sizeof(new_code), "%s %d", record.course_code, record.id);
+	int res = snprintf(new_code, sizeof(new_code), "%s%d", record.course_code, record.id);
 	if (res >= 0 && result < sizeof(new_code))
 	{
 		// The string fit within the buffer
 		strcpy(record.course_code, new_code);
 	}
-	// int id = record.id;
-	// send(clifd, &id, sizeof(id), 0);
+	int id = record.id;
+	send(clifd, &id, sizeof(id), 0);
 
-	send(clifd, &new_code, sizeof(new_code), 0);
+	// send(clifd, &new_code, sizeof(new_code), 0);
 
 	printf("Generated_id: %d\n", record.id);
 
@@ -965,7 +1004,7 @@ bool addCourse(int clifd, struct course record)
 
 bool viewCourses(int clifd, struct course record)
 {
-	bool result = false;
+	bool result;
 	struct course curr_record;
 
 	int fd = open(COURSE_DB, O_RDONLY, 0777);
@@ -996,7 +1035,7 @@ bool viewCourses(int clifd, struct course record)
 	// to count no. of courses offered by faculty
 	while ((byteread = read(fd, &curr_record, sizeof(struct course))) > 0)
 	{
-		if (curr_record.faculty_id == record.faculty_id && strcmp(curr_record.status, "ACTIVE") == 0)
+		if (curr_record.faculty_id == uid && strcmp(curr_record.status, "ACTIVE") == 0)
 		{
 			count++;
 		}
@@ -1009,7 +1048,7 @@ bool viewCourses(int clifd, struct course record)
 	// reading records and sending to client
 	while ((byteread = read(fd, &curr_record, sizeof(struct course))) > 0)
 	{
-		if (curr_record.faculty_id == record.faculty_id && strcmp(curr_record.status, "ACTIVE") == 0)
+		if (curr_record.faculty_id == uid && strcmp(curr_record.status, "ACTIVE") == 0)
 		{
 			send(clifd, &curr_record, sizeof(struct course), 0);
 		}
@@ -1129,4 +1168,214 @@ bool removeCourse(int clifd, struct course record)
 	close(fd);
 
 	return result;
+}
+
+bool updateCourse(int clifd, struct course record)
+{
+	// printf("Entered in updaate course\n");
+	struct course curr_record;
+	bool result;
+	int i = record.id - 1;
+
+	int fd = open(COURSE_DB, O_RDWR, 0777);
+	if (fd == -1)
+	{
+		perror("Error in opening course_db");
+		exit(EXIT_FAILURE);
+	}
+
+	struct flock lock;
+	lock.l_type = F_WRLCK;
+	lock.l_whence = SEEK_SET;
+	lock.l_start = (i) * sizeof(struct course);
+	lock.l_len = sizeof(struct course);
+	lock.l_pid = getpid();
+
+	int status = fcntl(fd, F_SETLKW, &lock);
+	if (status == -1)
+	{
+		perror("Error while locking course record");
+		exit(EXIT_FAILURE);
+	}
+
+	lseek(fd, (i) * sizeof(struct course), SEEK_SET);
+	ssize_t fd_read = read(fd, &curr_record, sizeof(struct course));
+	if (fd_read == -1)
+	{
+		perror("Error while reading current record");
+		exit(EXIT_FAILURE);
+	}
+
+	strcpy(curr_record.name, record.name);
+	strcpy(curr_record.department, record.department);
+	curr_record.no_of_seats = record.no_of_seats;
+	curr_record.credits = record.credits;
+	// sprintf(curr_record.course_code, "%s%d", record.course_code, record.id);
+
+	char new_code[6];
+	int res = snprintf(new_code, sizeof(new_code), "%s %d", record.course_code, record.id);
+	if (res >= 0 && result < sizeof(new_code))
+	{
+		// The string fit within the buffer
+		strcpy(curr_record.course_code, new_code);
+	}
+
+	lseek(fd, (-1) * sizeof(struct course), SEEK_CUR);
+	if (strcmp(curr_record.status, "ACTIVE") == 0)
+	{
+		ssize_t fd_write = write(fd, &curr_record, sizeof(struct course));
+		if (fd_write != 0)
+		{
+			result = true;
+		}
+		else
+		{
+			result = false;
+		}
+	}
+	else 
+	{
+		result = false;
+	}
+
+	lock.l_type = F_UNLCK;
+	status = fcntl(fd, F_SETLK, &lock);
+	if (status == -1)
+	{
+		perror("Error in unlocking the file");
+		exit(EXIT_FAILURE);
+	}
+
+	close(fd);
+	return result;
+}
+
+bool facultyChangePass(int clifd, struct faculty record)
+{
+	// printf ("Entered change pass\n");
+	struct faculty curr_record;
+	bool result;
+	int fd = open(FACULTY_DB, O_RDWR, 0777);
+	if (fd == -1)
+	{
+		perror("Error in opening faculty_db");
+		exit(EXIT_FAILURE);
+	}
+
+	// printf("uid: %d\n", uid);
+
+	struct flock lock;
+	lock.l_type = F_WRLCK;
+	lock.l_whence = SEEK_SET;
+	lock.l_start = (uid - 1) * sizeof(struct faculty);
+	lock.l_len = sizeof(struct faculty);
+	lock.l_pid = getpid();
+
+	int status = fcntl(fd, F_SETLKW, &lock);
+	if (status == -1)
+	{
+		perror("Error while locking faculty record");
+		exit(EXIT_FAILURE);
+	}
+
+	lseek(fd, (uid - 1) * sizeof(struct faculty), SEEK_SET);
+	ssize_t fd_read = read(fd, &curr_record, sizeof(struct faculty));
+	if (fd_read == -1)
+	{
+		perror("Error while reading current record");
+		exit(EXIT_FAILURE);
+	}
+
+	strcpy(curr_record.password, record.password);
+
+	lseek(fd, (-1) * sizeof(struct faculty), SEEK_CUR);
+	ssize_t fd_write = write(fd, &curr_record, sizeof(struct faculty));
+	if (fd_write == -1)
+	{
+		perror("Error in updating status");
+		result = false;
+	}
+	else
+	{
+		result = true;
+	}
+
+	lock.l_type = F_UNLCK;
+	status = fcntl(fd, F_SETLK, &lock);
+	if (status == -1)
+	{
+		perror("Error in unlocking the file");
+		exit(EXIT_FAILURE);
+	}
+	close(fd);
+
+	return result;
+}
+
+// ***************************************
+// ********* STUDENT FUNCTOINS ***********
+// ***************************************
+
+
+
+
+bool studentChangePass(int clifd, struct student record) {
+	struct student curr_record;
+	bool result;
+	int fd = open(STUDENT_DB, O_RDWR, 0777);
+	if (fd == -1)
+	{
+		perror("Error in opening student_db");
+		exit(EXIT_FAILURE);
+	}
+
+	// printf("uid: %d\n", uid);
+
+	struct flock lock;
+	lock.l_type = F_WRLCK;
+	lock.l_whence = SEEK_SET;
+	lock.l_start = (uid - 1) * sizeof(struct student);
+	lock.l_len = sizeof(struct student);
+	lock.l_pid = getpid();
+
+	int status = fcntl(fd, F_SETLKW, &lock);
+	if (status == -1)
+	{
+		perror("Error while locking student record");
+		exit(EXIT_FAILURE);
+	}
+
+	lseek(fd, (uid - 1) * sizeof(struct student), SEEK_SET);
+	ssize_t fd_read = read(fd, &curr_record, sizeof(struct student));
+	if (fd_read == -1)
+	{
+		perror("Error while reading current record");
+		exit(EXIT_FAILURE);
+	}
+
+	strcpy(curr_record.password, record.password);
+
+	lseek(fd, (-1) * sizeof(struct student), SEEK_CUR);
+	ssize_t fd_write = write(fd, &curr_record, sizeof(struct student));
+	if (fd_write == -1)
+	{
+		perror("Error in updating status");
+		result = false;
+	}
+	else
+	{
+		result = true;
+	}
+
+	lock.l_type = F_UNLCK;
+	status = fcntl(fd, F_SETLK, &lock);
+	if (status == -1)
+	{
+		perror("Error in unlocking the file");
+		exit(EXIT_FAILURE);
+	}
+	close(fd);
+
+	return result;
+
 }

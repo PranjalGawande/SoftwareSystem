@@ -42,6 +42,9 @@ void view_courses (int, int);
 void add_course(int, int);
 void remove_course(int, int);
 void update_course(int, int);
+void faculty_change_pass(int, int);
+
+void student_change_pass(int, int);
 
 #define DEFAULT_PASS "abc123"
 #define STUDENT_DB "/home/pranjal-gawande/Software System/Course Registration portal/database/student_db"
@@ -133,15 +136,15 @@ int show_menu(int sockfd)
         break;
 
     case 2:
-        printf("\n********** Welcome to Faculty Menu **********\n\n");
+        printf("\n********** Welcome to Faculty Menu *welcome_menu(sockf*********\n\n");
         printf("1. View Offering Courses\n");
         printf("2. Add New Course\n");
         printf("3. Remove Course\n");
         printf("4. Update Course Details\n");
         printf("5. Change Password\n");
-        printf("9. Logout and Exit\n\n");
+        printf("6. Logout and Exit\n\n");
 
-        printf("Enter your choice: \n");
+        printf("Enter a option: ");
         scanf("%d", &option);
 
         faculty_functions(sockfd, option);
@@ -154,16 +157,19 @@ int show_menu(int sockfd)
         printf("3. Drop Course\n");
         printf("4. View Enrolled Course Details\n");
         printf("5. Change Password\n");
-        printf("9. Logout and Exit\n\n");
-        printf("Enter your choice: \n");
+        printf("6. Logout and Exit\n\n");
+        printf("Enter a option: ");
 
         scanf("%d", &option);
+
+        student_functions(sockfd, option);
+        
+        break;
 
     default:
         printf("Invalid choice");
         break;
     }
-    // admin_functions(sockfd, option);
 
     return 0;
 }
@@ -233,8 +239,11 @@ void student_login(int sockfd)
 {
     struct student curr_user;
     bool res;
+
     printf("Login id: ");
-    scanf("%s", curr_user.login_id);
+    scanf("%[^\n]", curr_user.login_id);
+    getchar();
+
     printf("Password: ");
     char *password = getpass("");
     strcpy(curr_user.password, password);
@@ -312,18 +321,38 @@ void faculty_functions(int sockfd, int option) {
         update_course(sockfd, option);
         break;
     case 5:
-        // activate_student(sockfd, option);
+        faculty_change_pass(sockfd, option);
         break;
     case 6:
-        // block_student(sockfd, option);
         break;
-    case 7:
-        // modify_student(sockfd, option);
+    default:
+        printf("Invalid choice");
+        show_menu(sockfd);
         break;
-    case 8:
-        // modify_faculty(sockfd, option);
+    }
+    return;
+}
+
+
+void student_functions(int sockfd, int option) {
+    switch (option)
+    {
+    case 1:
+        // view_courses(sockfd, option);
         break;
-    case 9:
+    case 2:
+        // add_course(sockfd, option);
+        break;
+    case 3:
+        // remove_course(sockfd, option);
+        break;
+    case 4:
+        // update_course(sockfd, option);
+        break;
+    case 5:
+        student_change_pass(sockfd, option);
+        break;
+    case 6:
         break;
     default:
         printf("Invalid choice");
@@ -708,8 +737,8 @@ void view_courses (int sockfd, int option) {
     struct course record;
     bool result;
     
-    printf ("Enter your Faculty Id: ");
-    scanf("%d", &record.faculty_id);
+    // printf ("Enter your Faculty Id: ");
+    // scanf("%d", &record.faculty_id);
 
     send (sockfd, &record, sizeof(struct course), 0);
 
@@ -735,7 +764,7 @@ void view_courses (int sockfd, int option) {
         printf ("Succefully fetched all courses\n");
     }
     else {
-        printf ("NO Course Found3\n");
+        printf ("No Course Found\n");
     }
 
     show_menu(sockfd);
@@ -780,15 +809,16 @@ void add_course(int sockfd, int option) {
     // int id;
     // recv (sockfd, &id, sizeof(id), 0);
 
-    char code[6];
-    strcpy(code, record.course_code);
-    recv (sockfd, &code, sizeof(code), 0);
+    int id;
+    // strcpy(code, record.course_code);
+    recv (sockfd, &id, sizeof(id), 0);
 
     recv (sockfd, &result, sizeof(result), 0);
 
     if (result == true) {
         printf ("\nNew Course Added Successfully\n\n");
-        printf ("Course Code generated: %s\n\n", code);
+        printf ("Course Id generated: %d\n\n", id);
+        printf ("Node: Course code will be {course_code(first 2 letter)}{course_id}\n");
     }
     else {
         printf ("No record\n");
@@ -830,4 +860,117 @@ void remove_course(int sockfd, int option) {
     return;
 
 }
+
+void update_course(int sockfd, int option) {
+    send (sockfd, &option, sizeof(option), 0);
+
+    struct course record;
+    bool result;
+    int msg;
+
+    printf ("Enter Course Id to update: ");
+    scanf ("%d", &record.id);
+
+    getchar();
+    printf("New Name of the Course: ");
+    scanf("%[^\n]", record.name);
+    getchar();
+    printf("New Department: ");
+    scanf("%[^\n]", record.department);
+    getchar();
+    printf("New Total Number of Seats: ");
+    // int total_seats;
+    scanf("%d", &record.no_of_seats);
+    // record.no_of_seats = total_seats;
+    getchar();
+    printf("New Credit: ");
+    // int cred;
+    scanf("%d", &record.credits);
+    // record.credits = cred;
+    getchar();
+    printf("New Course Code (First 2 letters): ");
+    scanf("%[^\n]", record.course_code);
+    getchar();
+
+    send(sockfd, &record, sizeof(struct course), 0);
+
+    // recv(sockfd, &msg, sizeof(msg), 0);
+    recv(sockfd, &result, sizeof(result), 0);
+
+    if (result == true) {
+        printf ("\nSuccessfully updated the course details\n");
+    }
+    else {
+        printf("Error modifying the student details, please re-check the details you entered!\n\n");
+    }
+    
+
+    show_menu(sockfd);
+    return;
+
+}
+
+
+void faculty_change_pass(int sockfd, int option) {
+    send (sockfd, &option, sizeof(option), 0);
+
+    struct faculty record;
+    bool result;
+
+    printf ("New Password : ");
+    char *pass = getpass("");
+    strcpy (record.password, pass);
+
+    send (sockfd, &record, sizeof(struct faculty), 0);
+
+    recv (sockfd, &result, sizeof(result), 0);
+
+    if (result == true) {
+        printf ("\nPassword updated successfully\n");
+    }
+    else {
+        printf ("\nPassword change attempt failed\n");
+    }
+
+    show_menu(sockfd);
+    return;
+
+}
+
+
+// ***************************************
+// ********* STUDENT FUNCTOINS ***********
+// ***************************************
+
+
+
+
+
+
+void student_change_pass(int sockfd, int option) {
+    send (sockfd, &option, sizeof(option), 0);
+
+    struct student record;
+    bool result;
+
+    printf ("New Password : ");
+    char *pass = getpass("");
+    strcpy (record.password, pass);
+
+    send (sockfd, &record, sizeof(struct student), 0);
+
+    recv (sockfd, &result, sizeof(result), 0);
+
+    if (result == true) {
+        printf ("\nPassword updated successfully\n");
+    }
+    else {
+        printf ("\nPassword change attempt failed\n");
+    }
+
+    show_menu(sockfd);
+    return;
+
+}
+
 

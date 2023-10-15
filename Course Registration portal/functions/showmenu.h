@@ -42,7 +42,7 @@
 //     printf("3. Remove Course\n");
 //     printf("4. Update Course Details\n");
 //     printf("5. Change Password\n");
-//     printf("9. Logout and Exit\n\n");
+//     printf("6. Logout and Exit\n\n");
     
 //     printf("Enter your choice: \n");
 
@@ -59,7 +59,7 @@
 //     printf("3. Drop Course\n");
 //     printf("4. View Enrolled Course Details\n");
 //     printf("5. Change Password\n");
-//     printf("9. Logout and Exit\n\n");
+//     printf("6. Logout and Exit\n\n");
 //     printf("Enter your choice: \n");
 
 //     scanf("%d", &option);
