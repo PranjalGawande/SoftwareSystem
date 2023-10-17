@@ -49,6 +49,8 @@ void faculty_change_pass(int, int);
 void view_all_courses(int, int);
 void student_change_pass(int, int);
 void enroll_course (int, int);
+void drop_course(int, int);
+void view_enrolled_courses(int, int);
 
 #define DEFAULT_PASS "abc123"
 // #define STUDENT_DB "/home/pranjal-gawande/Software System/Course Registration portal/database/student_db"
@@ -343,16 +345,15 @@ void student_functions(int sockfd, int option) {
     {
     case 1:
         view_all_courses(sockfd, option);
-        // viewAvailableCourse(sockfd,option);
         break;
     case 2:
         enroll_course(sockfd, option);
         break;
     case 3:
-        // remove_course(sockfd, option);
+        drop_course(sockfd, option);
         break;
     case 4:
-        // update_course(sockfd, option);
+        view_enrolled_courses(sockfd, option);
         break;
     case 5:
         student_change_pass(sockfd, option);
@@ -768,7 +769,7 @@ void view_courses (int sockfd, int option) {
 
     recv (sockfd, &result, sizeof(result), 0);
     if (result == true) {
-        printf ("Succefully fetched all courses\n");
+        printf ("Successfully fetched all courses\n");
     }
     else {
         printf ("No Course Found\n");
@@ -789,11 +790,11 @@ void add_course(int sockfd, int option) {
     printf ("Enter Course Name: ");
     scanf("%[^\n]", record.name);
 
-    getchar();
-    printf ("Enter Your Faculty Id: ");
-    int f_id;
-    scanf("%d", &f_id);
-    record.faculty_id = f_id;
+    // getchar();
+    // printf ("Enter Your Faculty Id: ");
+    // int f_id;
+    // scanf("%d", &f_id);
+    // record.faculty_id = f_id;
 
     getchar();
     printf ("Enter Department: ");
@@ -1003,6 +1004,8 @@ void view_all_courses(int sockfd, int option) {
         printf("\nCourse ID: %d", record.id);
         // printf("\nCourse Code: %s", record.course_code);
         printf("\nCourse Name: %s", record.name);
+        printf ("\nFaculty Id: %d", record.faculty_id);
+        printf ("\nDepartment: %s", record.department);
         printf("\nAvailable Seats: %d", record.no_of_available_seats);
         printf("\nCourse Credit: %d\n", record.credits);
     }
@@ -1029,11 +1032,14 @@ void enroll_course (int sockfd, int option) {
     printf("Enter Course ID to enroll: ");
     scanf("%d", &enroll.courseid);
 
+    strcpy(enroll.status, "");
+
     send (sockfd, &enroll, sizeof(struct enrollment), 0);
 
-    // recv (sockfd, &available_seats, sizeof(available_seats), 0);
+    recv (sockfd, &available_seats, sizeof(available_seats), 0);
 
-    // printf ("\nNumber ")
+    printf ("\nNumber of available seats in this course: %d\n", available_seats);
+
     int msg;
     recv (sockfd, &msg, sizeof(msg), 0);
     
@@ -1042,16 +1048,89 @@ void enroll_course (int sockfd, int option) {
     if (msg == 1 && result == true) {
         printf ("\nSuccessfully enrolled in course\n");
     }
-    else if (msg == 0) {
+    else if (msg == 0 && result == false) {
         printf ("\nYou are already enrolled in this course\n");
     }
     else {
         printf ("\nThere is some problem in enrolling in the course\n");
     }
+
     show_menu(sockfd);
+    return;
 
 }
 
+
+void drop_course(int sockfd, int option) {
+    send (sockfd, &option, sizeof(option), 0);
+    struct enrollment enroll;
+    bool result;
+
+    printf("Enter Course Id of the course you wish to drop: ");
+    scanf("%d", &enroll.courseid);
+
+    send (sockfd, &enroll, sizeof(struct enrollment), 0);
+
+    int msg;
+    recv (sockfd, &msg, sizeof(msg), 0);
+    recv (sockfd, &result, sizeof(result), 0);
+
+    if (msg == 1 && result == true) {
+        printf ("\nSuccessfully Dropped the course\n");
+    }
+    else if (msg = 0) {
+        printf ("\nNot enrolled in the given course\n");
+    }
+    else {
+        printf ("\nError in dropping the course\n");
+    }
+
+    show_menu(sockfd);
+    return;
+    
+}
+
+void view_enrolled_courses(int sockfd, int option) {
+    send (sockfd, &option, sizeof (option), 0);
+
+    struct enrollment enroll;
+    struct course courseRecord;
+    bool result;
+
+    send (sockfd, &enroll, sizeof(struct enrollment), 0);
+
+    int count, cnt;
+    recv (sockfd, &count, sizeof(count), 0);
+
+    printf ("\nEnrolled In: %d courses\n", count);
+
+    for (int i = 0; i < count; i++) {
+        // revc (sockfd, &cnt, sizeof(cnt), 0);
+        // recv (sockfd, &enroll, sizeof(struct enrollment), 0);
+        // printf("\nCourse ID: %d", enroll.courseid);
+        // printf("\nStudent ID: %d", enroll.studentid);
+        recv (sockfd, &courseRecord, sizeof(struct course), 0);
+        printf("\nCourse ID: %d", courseRecord.id);
+        printf("\nCourse Name: %s", courseRecord.name);
+        printf ("\nFaculty Id: %d", courseRecord.faculty_id);
+        printf ("\nDepartment: %s", courseRecord.department);
+        printf("\nAvailable Seats: %d", courseRecord.no_of_available_seats);
+        printf("\nCourse Credit: %d\n\n", courseRecord.credits);
+
+    }
+
+    recv (sockfd, &result, sizeof(result), 0);
+    if (result == true) {
+        printf ("\nSuccessfully fetched all the courses\n");
+    }
+    else {
+        printf ("\nError in fetching all the courses\n");
+    }
+    
+    show_menu(sockfd);
+    return;
+
+}
 
 
 void student_change_pass(int sockfd, int option) {
