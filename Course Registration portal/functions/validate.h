@@ -12,13 +12,11 @@
 
 #include "../structures/admin.h"
 #include "../structures/faculty.h"
-// #include "../server.c"
 
 int uid;
 bool result;
 
 bool validateAdmin(struct admin curr_user) {
-    // bool result;
     int fd = open("/home/pranjal-gawande/Software System/Course Registration portal/database/admin_db", O_RDONLY);
     if (fd == -1) {
         perror ("Error in opening admin_db file");
@@ -149,7 +147,7 @@ bool validateStudent(struct student curr_user) {
 
     // reading record
     while(read(fd, &temp, sizeof(temp)) > 0) {
-        if (strcmp(temp.login_id, curr_user.login_id) == 0 && strcmp(temp.password, curr_user.password) == 0) {
+        if (strcmp(temp.login_id, curr_user.login_id) == 0 && strcmp(temp.password, curr_user.password) == 0 && strcmp(temp.status, "ACTIVE") == 0) {
             uid = temp.id;
             result = true;
             break;
